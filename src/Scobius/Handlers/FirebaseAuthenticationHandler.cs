@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using Scobius.Services;
 
 namespace Scobius.Handlers
 {
@@ -10,7 +11,8 @@ namespace Scobius.Handlers
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        FirebaseAuth firebaseAuth) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+        FirebaseAuth firebaseAuth,
+        UserService userService) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
     {
         private readonly FirebaseAuth _firebaseAuth = firebaseAuth;
 
@@ -34,11 +36,17 @@ namespace Scobius.Handlers
             {
                 FirebaseToken firebaseToken = await _firebaseAuth.VerifyIdTokenAsync(token);
 
+                bool exists = await userService.Exists(firebaseToken.Uid);
+                UserRecord user = await FirebaseAuth.DefaultInstance.GetUserByEmailAsync(firebaseToken.Claims["email"]?.ToString());
+                bool emailVerified = user.EmailVerified;
+
+                if (!exists || !emailVerified) return AuthenticateResult.Fail("User doesn't exist");
+
                 List<Claim> claims =
                 [
                     new(ClaimTypes.NameIdentifier, firebaseToken.Uid),
-                new(ClaimTypes.Email, firebaseToken.Claims["email"]?.ToString() ?? ""),
-                new(ClaimTypes.Name, firebaseToken.Claims["name"]?.ToString() ?? "")
+                    new(ClaimTypes.Email, firebaseToken.Claims["email"]?.ToString() ?? ""),
+                    new(ClaimTypes.Name, firebaseToken.Claims["name"]?.ToString() ?? "")
                 ];
 
                 ClaimsIdentity identity = new(claims, Scheme.Name);

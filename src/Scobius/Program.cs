@@ -3,7 +3,10 @@ using FirebaseAdmin.Auth;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Scobius;
 using Scobius.Handlers;
+using Scobius.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +18,7 @@ var firebaseApp = FirebaseApp.Create(
         ProjectId = builder.Configuration["FirebaseID"],
     }
 );
+builder.Services.AddTransient<UserService>();
 // Register FirebaseAuth as a singleton
 builder.Services.AddSingleton(FirebaseAuth.GetAuth(firebaseApp));
 builder.Services.AddAuthentication(options =>
@@ -36,6 +40,10 @@ builder.Services.AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+
+builder.Services.AddDbContext<ScobiusTest_Context>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("local")));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -55,4 +63,18 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+using (var scope = app.Services.CreateScope())
+{
+    var userService = scope.ServiceProvider.GetRequiredService<UserService>();
+
+    try
+    {
+        await userService.RetrieveUser();
+        Console.WriteLine("Successfully fetched and stored verified users.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error fetching users: {ex.Message}");
+    }
+}
 app.Run();

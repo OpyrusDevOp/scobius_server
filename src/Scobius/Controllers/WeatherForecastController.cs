@@ -14,7 +14,6 @@ public class WeatherForecastController(ILogger<WeatherForecastController> logger
 
     private readonly ILogger<WeatherForecastController> _logger = logger;
 
-    [Authorize]
     [HttpGet(Name = "GetWeatherForecast")]
     public IEnumerable<WeatherForecast> Get()
     {
