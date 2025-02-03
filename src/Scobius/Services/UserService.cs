@@ -27,7 +27,7 @@ public class UserService(ScobiusTest_Context context)
         User user = new User()
         {
             Id = userRecord.Uid,
-            Username = userRecord.DisplayName ?? $"User{context.Users.Count()}",
+            Username = userRecord.DisplayName.Trim() ?? $"User{context.Users.Count()}",
             ProfilePicture = userRecord.PhotoUrl,
             Email = userRecord.Email,
             LastSeen = DateTime.UtcNow,
@@ -40,6 +40,30 @@ public class UserService(ScobiusTest_Context context)
         return DtoHandler.ToUserDto(entry.Entity);
     }
 
+    public async Task<UserQueryDto[]> SearchUsers(string name, string userId)
+    {
+        IEnumerable<User> users = await context.Users.ToListAsync();
+
+        return users
+          .Where(u =>
+        {
+            string username = u.Username.ToLowerInvariant();
+
+            return u.Id != userId && username.Contains(name.Trim(), StringComparison.InvariantCultureIgnoreCase);
+        })
+        .Select(
+            u =>
+            {
+                bool isFriend = context.Friendships.Any(
+                    fs => fs.UserAId == userId && fs.UserBId == u.Id ||
+                    fs.UserAId == u.Id && fs.UserBId == userId
+                    );
+                bool hasPendingRequest = context.FriendshipRequests.Any(r => r.SenderId == userId && r.ReceiverId == u.Id && r.Status == FriendshipRequestStatus.Pending);
+                return DtoHandler.ToUserQueryDto(u, isFriend, hasPendingRequest);
+            }
+            )
+          .ToArray();
+    }
 
     public async Task<bool> Exists(String userId) => await context.Users.AnyAsync((u) => u.Id == userId);
 

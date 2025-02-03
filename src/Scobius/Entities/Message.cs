@@ -8,20 +8,25 @@ namespace Scobius.Entities;
 public class Message
 {
     [Key]
-
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public Guid Id { get; set; }
 
     [ForeignKey(nameof(Chat))]
     public Guid ChatId { get; set; }
     [ForeignKey(nameof(Sender))]
-    public String SenderId { get; set; } = null!;
+    public string SenderId { get; set; } = null!;
     [Required]
-    public String MessageContent { get; set; } = null!;
+    public string MessageContent { get; set; } = null!;
+    [ForeignKey(nameof(RepliedTo))]
+    public Guid? MessageRepliedTo { get; set; }
     [ForeignKey(nameof(Media))]
-    public Guid? jointMedia { get; set; }
+    public Guid? JointMedia { get; set; }
+    public bool Seen { get; set; }
+    public DateTime SendAt { get; set; }
 
-    public Chat Chat;
-    public User Sender;
-    public Media Media;
+    public virtual Chat Chat { get; set; }
+    public virtual User Sender { get; set; }
+    public virtual Media Media { get; set; }
+    public virtual Message RepliedTo { get; set; }
+
 }

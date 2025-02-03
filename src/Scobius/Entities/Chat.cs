@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Scobius.Entities;
 
@@ -12,10 +13,8 @@ public class Chat
     public string UserAId { get; set; } = null!;
     [ForeignKey(nameof(UserB))]
     public string UserBId { get; set; } = null!;
-
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public DateTime CreateAt { get; set; }
 
-    public User UserA;
-    public User UserB;
+    public User UserA { get; set; }
+    public User UserB { get; set; }
 }

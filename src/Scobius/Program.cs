@@ -3,9 +3,11 @@ using FirebaseAdmin.Auth;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Scobius;
 using Scobius.Handlers;
+using Scobius.Hubs;
 using Scobius.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,13 +16,19 @@ var builder = WebApplication.CreateBuilder(args);
 var firebaseApp = FirebaseApp.Create(
     new AppOptions()
     {
-        Credential = GoogleCredential.GetApplicationDefault(),
+        Credential = GoogleCredential.FromFile(builder.Configuration["GoogleCredentialFile"]),
         ProjectId = builder.Configuration["FirebaseID"],
     }
 );
 builder.Services.AddTransient<UserService>();
-// Register FirebaseAuth as a singleton
+builder.Services.AddTransient<ChatService>();
+builder.Services.AddTransient<FrienshipService>();
+builder.Services.AddTransient<MediaService>();
+
+
 builder.Services.AddSingleton(FirebaseAuth.GetAuth(firebaseApp));
+builder.Services.AddSingleton<IUserIdProvider, HubUserIdProvider>();
+
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = "Firebase";
@@ -37,13 +45,13 @@ builder.Services.AddAuthorization(options =>
         .Build();
     });
 builder.Services.AddControllers();
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
+builder.Services.AddSignalR();
 
 builder.Services.AddDbContext<ScobiusTest_Context>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("local")));
+
+builder.Services.AddOpenApi();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -62,6 +70,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<MainHub>("/app");
 
 using (var scope = app.Services.CreateScope())
 {
@@ -77,4 +86,5 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"Error fetching users: {ex.Message}");
     }
 }
+
 app.Run();

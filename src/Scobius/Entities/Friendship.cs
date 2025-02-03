@@ -1,13 +1,11 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Scobius.Entities;
 
-public class Frienship
+[PrimaryKey("UserAId", "UserBId")]
+public class Friendship
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public Guid Id { get; set; }
     [ForeignKey(nameof(UserA))]
     public string UserAId { get; set; }
     [ForeignKey(nameof(UserB))]
@@ -15,6 +13,6 @@ public class Frienship
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public DateTime CreateAt { get; set; }
 
-    public User UserA;
-    public User UserB;
+    public virtual User UserA { get; set; }
+    public virtual User UserB { get; set; }
 }

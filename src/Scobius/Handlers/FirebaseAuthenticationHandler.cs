@@ -42,11 +42,12 @@ namespace Scobius.Handlers
 
                 if (!exists || !emailVerified) return AuthenticateResult.Fail("User doesn't exist");
 
+                foreach (var key in firebaseToken.Claims.Keys)
+                    Console.WriteLine(key);
                 List<Claim> claims =
                 [
                     new(ClaimTypes.NameIdentifier, firebaseToken.Uid),
                     new(ClaimTypes.Email, firebaseToken.Claims["email"]?.ToString() ?? ""),
-                    new(ClaimTypes.Name, firebaseToken.Claims["name"]?.ToString() ?? "")
                 ];
 
                 ClaimsIdentity identity = new(claims, Scheme.Name);
@@ -54,7 +55,6 @@ namespace Scobius.Handlers
                 AuthenticationTicket ticket = new(principal, Scheme.Name);
 
 
-                Console.WriteLine(identity.Name);
                 return AuthenticateResult.Success(ticket);
             }
             catch (FirebaseAuthException ex)
